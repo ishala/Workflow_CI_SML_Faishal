@@ -83,8 +83,7 @@ def objective(trial, X_train, X_test, y_train, y_test):
     metrics = compute_metrics(X_train, y_train, y_pred_train,
                               X_test, y_test, y_pred_test, model)
 
-    # nested run khusus untuk trial ini
-    with mlflow.start_run(nested=True):
+    with mlflow.start_run():
         mlflow.log_params({"C": C, "gamma": gamma, "kernel": kernel})
         mlflow.log_metrics(metrics)
 
