@@ -39,12 +39,12 @@ jobs:
       - name: Env preparations
         run: |
           pip install --upgrade pip
-          pip install mlflow
+          pip install -r MLProject/requirements.txt
 
       # 5. Run MLProject
       - name: Run MLProject
         run: |
-          mlflow run MLProject/ --env-manager=conda \
+          mlflow run MLProject/ --env-manager=local \
             -P dataset=$CSV_URL \
             -P ncomps=$N_COMPS \
             -P ntrials=$N_TRIALS
