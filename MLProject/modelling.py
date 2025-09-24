@@ -25,7 +25,7 @@ load_dotenv()
 #     repo_name="SML_Membangun_Model",
 #     mlflow=True
 # )
-mlflow.set_tracking_uri("https://dagshub.com/ishala/SML_Membangun_Model.mlflow")
+mlflow.set_tracking_uri("http://127.0.0.1:5000/")
 mlflow.set_experiment("Mobile Price Range Prediction")
 
 warnings.filterwarnings("ignore")
