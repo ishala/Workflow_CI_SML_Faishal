@@ -93,7 +93,9 @@ def main(args):
     dagshub.init(
         repo_owner="ishala",
         repo_name="Membangun_Model_SML_Faishal",
-        mlflow=True
+        mlflow=True,
+        host="https://dagshub.com",
+        token=os.getenv("DAGSHUB_TOKEN")
     )
 
     warnings.filterwarnings("ignore")
