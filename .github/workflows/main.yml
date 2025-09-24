@@ -44,7 +44,7 @@ jobs:
       # 5. Run MLProject
       - name: Run MLProject
         run: |
-          mlflow run MLProject --env-manager=conda \
+          mlflow run MLProject --env-manager=local \
             -P dataset=$CSV_URL \
             -P ncomps=$N_COMPS \
             -P ntrials=$N_TRIALS
@@ -83,7 +83,7 @@ jobs:
       # 11. Tag Docker Image
       - name: Tag Docker Image
         run: |
-          docker tag cc ${{ secrets.DOCKER_HUB_USERNAME }}/$CONTAINER_NAME:latest
+          docker tag $CONTAINER_NAME ${{ secrets.DOCKER_HUB_USERNAME }}/$CONTAINER_NAME:latest
       
       # 12. Push Docker Image
       - name: Push Docker Image
