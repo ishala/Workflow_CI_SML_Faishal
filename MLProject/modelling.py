@@ -83,12 +83,13 @@ def objective(trial, X_train, X_test, y_train, y_test):
     metrics = compute_metrics(X_train, y_train, y_pred_train,
                               X_test, y_test, y_pred_test, model)
 
-    # log trial → nested run
+    # nested run khusus untuk trial ini
     with mlflow.start_run(nested=True):
         mlflow.log_params({"C": C, "gamma": gamma, "kernel": kernel})
         mlflow.log_metrics(metrics)
 
     return metrics["val_accuracy"]
+
 
 def main(args):
     # load dataset
@@ -98,7 +99,7 @@ def main(args):
     X_lda = lda_dim_reduction(X, y, n_comp=args.ncomps)
     X_train, X_test, y_train, y_test = data_splitting(X_lda, y)
 
-    # --- tidak perlu start_run utama, mlflow run sudah handle ---
+    # di sini TIDAK ada start_run() manual
     study = optuna.create_study(direction="maximize")
     study.optimize(
         lambda trial: objective(trial, X_train, X_test, y_train, y_test),
@@ -106,6 +107,7 @@ def main(args):
     )
 
     best_trial = study.best_trial
+    # ini aman, karena parent run dari MLProject masih aktif
     mlflow.log_params(best_trial.params)
 
     best_model = SVC(**best_trial.params, probability=True, random_state=42)
@@ -113,13 +115,12 @@ def main(args):
     y_pred_train = best_model.predict(X_train)
     y_pred_test = best_model.predict(X_test)
     best_metrics = compute_metrics(X_train, y_train, y_pred_train,
-                                   X_test, y_test, y_pred_test, best_model)
+                                   X_test, y_test, best_model)
 
     mlflow.log_metrics({"best_" + k: v for k, v in best_metrics.items()})
 
     print("Best Trial:", best_trial.params)
     print("Best Metrics:", best_metrics)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
