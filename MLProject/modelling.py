@@ -6,7 +6,7 @@ import warnings
 import optuna
 import os
 from dotenv import load_dotenv
-import dagshub
+# import dagshub
 
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
