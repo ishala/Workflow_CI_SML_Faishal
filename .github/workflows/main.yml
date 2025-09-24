@@ -14,6 +14,8 @@ env:
   CONTAINER_NAME: "mobile-price-range-prediction"
   N_TRIALS: 30
   MLFLOW_TRACKING_URI_PROD: "https://dagshub.com/ishala/SML_Membangun_Model.mlflow"
+  DAGSHUB_USER: ${{ secrets.DAGSHUB_USER }}
+  DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
 
 jobs:
   build:
