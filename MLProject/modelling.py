@@ -6,7 +6,7 @@ import warnings
 import optuna
 import os
 from dotenv import load_dotenv
-# import dagshub
+import dagshub
 
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
@@ -87,13 +87,14 @@ def objective(trial, X_train, X_test, y_train, y_test):
     return metrics["val_accuracy"]
 
 def main(args):
-    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI_PROD"))
+    # print(os.getenv("MLFLOW_TRACKING_URI_PROD"))
+    # mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI_PROD"))
     mlflow.set_experiment("Mobile Price Range Prediction")
-    # dagshub.init(
-    #     repo_owner="ishala",
-    #     repo_name="Membangun_Model_SML_Faishal",
-    #     mlflow=True
-    # )
+    dagshub.init(
+        repo_owner="ishala",
+        repo_name="Membangun_Model_SML_Faishal",
+        mlflow=True
+    )
 
     warnings.filterwarnings("ignore")
     np.random.seed(42)
