@@ -90,12 +90,13 @@ def main(args):
     # print(os.getenv("MLFLOW_TRACKING_URI_PROD"))
     # mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI_PROD"))
     mlflow.set_experiment("Mobile Price Range Prediction")
+    dagshub.auth.add_app_token(token=os.getenv("DAGSHUB_TOKEN"),
+                               host="https://dagshub.com")
+
     dagshub.init(
         repo_owner="ishala",
         repo_name="Membangun_Model_SML_Faishal",
         mlflow=True,
-        host="https://dagshub.com",
-        token=os.getenv("DAGSHUB_TOKEN")
     )
 
     warnings.filterwarnings("ignore")
@@ -133,6 +134,8 @@ def main(args):
 
         print("Best Trial:", best_trial.params)
         print("Best Metrics:", best_metrics)
+        
+        dagshub.auth.clear_token_cache(force=False)
 
 
 if __name__ == "__main__":
