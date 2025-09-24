@@ -44,7 +44,7 @@ jobs:
       # 5. Run MLProject
       - name: Run MLProject
         run: |
-          mlflow run MLProject --env-manager=local \
+          mlflow run MLProject/ --env-manager=local \
             -P dataset=$CSV_URL \
             -P ncomps=$N_COMPS \
             -P ntrials=$N_TRIALS
