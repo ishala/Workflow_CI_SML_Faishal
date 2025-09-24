@@ -1,0 +1,84 @@
+name: CI-MLFlow
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  CSV_URL: "cleaned_data.csv"
+  N_COMPS: 3
+  CONTAINER_NAME: "mobile-price-range-prediction"
+  N_TRIALS: 30
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout repo
+      - uses: actions/checkout@v3
+
+      # 2. Setup Python 3.12.7
+      - name: Set up Python 3.12.7
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12.7"
+
+      # 3. Check ENV
+      - name: Check Env
+        run: |
+          echo $CSV_URL
+          echo $N_COMPS
+          echo $CONTAINER_NAME
+
+      # 4. Install Libs
+      - name: Install libraries from requirements.txt
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 5. Run preprocessing script
+      - name: Run modelling script
+        run: |
+          python modelling.py \
+            --dataset $CSV_URL \
+            --ncomps $N_COMPS \
+            --n_trials $N_TRIALS
+      
+      # 6. Get latest MLFlow run_id
+      - name: Get latest MLFlow run_id
+        run: |
+          RUN_ID=$(ls -td mlruns/0/*/ | head -n 1 | cut -d'/' -f3)
+          echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
+          echo "Latest run_id: $RUN_ID"
+      
+      # 7. Setup GitHub auth for push
+      - name: Setup GitHub auth
+        run: |
+          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}
+      
+      # 9. Build Docker Model
+      - name: Build Docker Model
+        run: |
+          mlflow models build-docker --model-uri "runs:/$RUN_ID/model" --name $CONTAINER_NAME
+      
+      # 10. Login to Docker Hub
+      - name: Login Docker Hub
+        uses: docker-login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      
+      # 11. Tag Docker Image
+      - name: Tag Docker Image
+        run: |
+          docker tag cc ${{ secrets.DOCKER_HUB_USERNAME }}/$CONTAINER_NAME:latest
+      
+      # 12. Push Docker Image
+      - name: Push Docker Image
+        run: |
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/$CONTAINER_NAME:latest
