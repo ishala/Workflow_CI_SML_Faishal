@@ -29,8 +29,7 @@ dagshub.init(
     mlflow=True
 )
 
-mlflow.set_experiment("Mobile Price Range Prediction")
-mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI_PROD", "https://dagshub.com/ishala/SML_Membangun_Model.mlflow"))
+mlflow.set_tracking_uri("https://dagshub.com/ishala/SML_Membangun_Model.mlflow")
 mlflow.set_experiment("Mobile Price Range Prediction")
 
 warnings.filterwarnings("ignore")
