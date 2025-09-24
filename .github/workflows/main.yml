@@ -35,8 +35,8 @@ jobs:
           echo $N_COMPS
           echo $CONTAINER_NAME
 
-      # 4. Install Libs
-      - name: Install libraries from requirements.txt
+      # 4. Env preparations
+      - name: Env preparations
         run: |
           pip install --upgrade pip
           pip install mlflow
