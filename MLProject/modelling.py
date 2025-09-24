@@ -20,7 +20,7 @@ load_dotenv()
 
 # --- DAGsHub + MLflow setup sekali ---
 # auth
-dagshub.auth.add_app_token(os.getenv("DAGSHUB_USER"), os.getenv("DAGSHUB_TOKEN"))
+dagshub.auth.add_app_token(token=os.getenv("DAGSHUB_TOKEN"), host="https://dagshub.com")
 
 # init mlflow ke repo dagshub
 dagshub.init(
