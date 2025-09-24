@@ -136,6 +136,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, default="cleaned_data.csv")
     parser.add_argument("--ncomps", type=int, default=3)
-    parser.add_argument("--n_trials", type=int, default=30)
+    parser.add_argument("--ntrials", type=int, default=30)
     args = parser.parse_args()
     main(args)
