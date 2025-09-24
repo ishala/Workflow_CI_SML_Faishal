@@ -39,16 +39,16 @@ jobs:
       - name: Install libraries from requirements.txt
         run: |
           pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install mlflow
 
-      # 5. Run preprocessing script
-      - name: Run modelling script
+      # 5. Run MLProject
+      - name: Run MLProject
         run: |
-          python modelling.py \
-            --dataset $CSV_URL \
-            --ncomps $N_COMPS \
-            --n_trials $N_TRIALS
-      
+          mlflow run MLProject --env-manager=local \
+            -P dataset=$CSV_URL \
+            -P ncomps=$N_COMPS \
+            -P ntrials=$N_TRIALS
+
       # 6. Get latest MLFlow run_id
       - name: Get latest MLFlow run_id
         run: |
@@ -68,7 +68,7 @@ jobs:
       
       # 10. Login to Docker Hub
       - name: Login Docker Hub
-        uses: docker-login-action@v2
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
