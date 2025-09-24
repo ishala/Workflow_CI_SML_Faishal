@@ -13,6 +13,7 @@ env:
   N_COMPS: 3
   CONTAINER_NAME: "mobile-price-range-prediction"
   N_TRIALS: 30
+  MLFLOW_TRACKING_URI_PROD: "https://dagshub.com/ishala/SML_Membangun_Model.mlflow"
 
 jobs:
   build:
