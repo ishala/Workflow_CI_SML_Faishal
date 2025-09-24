@@ -87,7 +87,7 @@ def objective(trial, X_train, X_test, y_train, y_test):
     return metrics["val_accuracy"]
 
 def main(args):
-    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI_DEV"))
+    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI_PROD"))
     mlflow.set_experiment("Mobile Price Range Prediction")
     # dagshub.init(
     #     repo_owner="ishala",
@@ -106,7 +106,7 @@ def main(args):
     X_lda = lda_dim_reduction(X, y, n_comp=args.ncomps)
     X_train, X_test, y_train, y_test = data_splitting(X_lda, y)
 
-    with mlflow.start_run(run_name="Optuna_Tuning") as parent_run:
+    with mlflow.start_run(run_name="Optuna_Tuning", nested=True):
         study = optuna.create_study(direction="maximize")
         study.optimize(
             lambda trial: objective(trial, X_train, X_test, y_train, y_test),
