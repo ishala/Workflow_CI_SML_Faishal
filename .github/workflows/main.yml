@@ -12,10 +12,7 @@ env:
   CSV_URL: "cleaned_data.csv"
   N_COMPS: 3
   CONTAINER_NAME: "mobile-price-range-prediction"
-  N_TRIALS: 3
-  MLFLOW_TRACKING_URI_PROD: "https://dagshub.com/ishala/SML_Membangun_Model.mlflow"
-  DAGSHUB_USER: ${{ secrets.DAGSHUB_USER }}
-  DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+  N_TRIALS: 30
 
 jobs:
   build:
@@ -25,26 +22,19 @@ jobs:
       # 1. Checkout repo
       - uses: actions/checkout@v3
 
-      # 2. Setup Python 3.12.7
+      # 2. Setup Python
       - name: Set up Python 3.12.7
         uses: actions/setup-python@v4
         with:
           python-version: "3.12.7"
 
-      # 3. Check ENV
-      - name: Check Env
-        run: |
-          echo $CSV_URL
-          echo $N_COMPS
-          echo $CONTAINER_NAME
-
-      # 4. Env preparations
-      - name: Env preparations
+      # 3. Env preparations
+      - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install -r MLProject/requirements.txt
 
-      # 5. Run MLProject
+      # 4. Run MLProject (train model)
       - name: Run MLProject
         run: |
           mlflow run MLProject/ --env-manager=local \
@@ -52,12 +42,21 @@ jobs:
             -P ncomps=$N_COMPS \
             -P ntrials=$N_TRIALS
 
-      # 6. Upload artifacts
+      # 5. Upload artifacts (mlruns)
       - name: Upload MLflow results
         uses: actions/upload-artifact@v4
         with:
           name: mlflow-artifacts
           path: mlruns/
+
+      # 6. Commit artifacts back to repo
+      - name: Commit MLflow artifacts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add mlruns/
+          git commit -m "Add latest MLflow artifacts [skip ci]" || echo "No changes to commit"
+          git push origin main || echo "No changes to push"
 
       # 7. Get latest MLFlow run_id
       - name: Get latest MLFlow run_id
@@ -65,30 +64,25 @@ jobs:
           RUN_ID=$(ls -td mlruns/0/*/ | head -n 1 | cut -d'/' -f3)
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
           echo "Latest run_id: $RUN_ID"
-      
-      # 8. Setup GitHub auth for push
-      - name: Setup GitHub auth
-        run: |
-          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}
-      
-      # 9. Build Docker Model
+
+      # 8. Build Docker model
       - name: Build Docker Model
         run: |
           mlflow models build-docker --model-uri "runs:/$RUN_ID/model" --name $CONTAINER_NAME
-      
-      # 10. Login to Docker Hub
-      - name: Login Docker Hub
+
+      # 9. Login to Docker Hub
+      - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-      
-      # 11. Tag Docker Image
+
+      # 10. Tag Docker Image
       - name: Tag Docker Image
         run: |
           docker tag $CONTAINER_NAME ${{ secrets.DOCKER_HUB_USERNAME }}/$CONTAINER_NAME:latest
-      
-      # 12. Push Docker Image
+
+      # 11. Push Docker Image
       - name: Push Docker Image
         run: |
           docker push ${{ secrets.DOCKER_HUB_USERNAME }}/$CONTAINER_NAME:latest
