@@ -89,11 +89,11 @@ def objective(trial, X_train, X_test, y_train, y_test):
 def main(args):
     mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI_DEV"))
     mlflow.set_experiment("Mobile Price Range Prediction")
-    dagshub.init(
-        repo_owner="ishala",
-        repo_name="Membangun_Model_SML_Faishal",
-        mlflow=True
-    )
+    # dagshub.init(
+    #     repo_owner="ishala",
+    #     repo_name="Membangun_Model_SML_Faishal",
+    #     mlflow=True
+    # )
 
     warnings.filterwarnings("ignore")
     np.random.seed(42)
