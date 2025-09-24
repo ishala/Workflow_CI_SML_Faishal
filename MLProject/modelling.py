@@ -18,13 +18,7 @@ from sklearn.metrics import (
 # load env
 load_dotenv()
 
-# DAGsHub + MLflow setup
-# dagshub.auth.add_app_token(token=os.getenv("DAGSHUB_TOKEN"), host="https://dagshub.com")
-# dagshub.init(
-#     repo_owner=os.getenv("DAGSHUB_USER"),
-#     repo_name="SML_Membangun_Model",
-#     mlflow=True
-# )
+# MLflow setup (local server)
 mlflow.set_tracking_uri("http://127.0.0.1:5000/")
 mlflow.set_experiment("Mobile Price Range Prediction")
 
@@ -33,25 +27,21 @@ np.random.seed(42)
 
 
 def lda_dim_reduction(X, y, n_comp=3):
-    """LDA dimensionality reduction"""
     lda = LinearDiscriminantAnalysis(n_components=n_comp)
     return lda.fit_transform(X, y)
 
 
 def data_splitting(X, y, rand_state=42, test_size=0.2):
-    """Split data into train and test"""
     return train_test_split(X, y, random_state=rand_state, test_size=test_size)
 
 
 def compute_metrics(X_train, y_train, y_pred_train,
                     X_test, y_test, y_pred_test,
                     model):
-    """Compute training & validation metrics"""
     y_prob_train = model.predict_proba(X_train)
     y_prob_test = model.predict_proba(X_test)
 
     return {
-        # validation
         "val_accuracy": accuracy_score(y_test, y_pred_test),
         "val_f1": f1_score(y_test, y_pred_test, average="weighted"),
         "val_recall": recall_score(y_test, y_pred_test, average="weighted"),
@@ -59,7 +49,6 @@ def compute_metrics(X_train, y_train, y_pred_train,
         "val_roc_auc": roc_auc_score(y_test, y_prob_test, multi_class="ovr"),
         "val_log_loss": log_loss(y_test, y_prob_test),
 
-        # training
         "train_accuracy": accuracy_score(y_train, y_pred_train),
         "train_f1": f1_score(y_train, y_pred_train, average="weighted"),
         "train_recall": recall_score(y_train, y_pred_train, average="weighted"),
@@ -70,7 +59,7 @@ def compute_metrics(X_train, y_train, y_pred_train,
 
 
 def objective(trial, X_train, X_test, y_train, y_test):
-    """Objective function for Optuna"""
+    """Optuna objective, tapi pakai run terpisah per trial"""
     C = trial.suggest_loguniform("C", 1e-2, 1e2)
     gamma = trial.suggest_loguniform("gamma", 1e-3, 1e1)
     kernel = trial.suggest_categorical("kernel", ["rbf", "linear", "poly", "sigmoid"])
@@ -84,8 +73,9 @@ def objective(trial, X_train, X_test, y_train, y_test):
     metrics = compute_metrics(X_train, y_train, y_pred_train,
                               X_test, y_test, y_pred_test, model)
 
-    # Nested run (trial-level)
-    with mlflow.start_run(nested=True):
+    # mirip kode referensi: langsung bikin run baru per kombinasi
+    run_name = f"trial_C{C:.3f}_gamma{gamma:.3f}_kernel{kernel}"
+    with mlflow.start_run(run_name=run_name):
         mlflow.log_params({"C": C, "gamma": gamma, "kernel": kernel})
         mlflow.log_metrics(metrics)
 
@@ -97,34 +87,36 @@ def main(args):
     df = pd.read_csv(args.dataset)
     X, y = df.drop(columns=["price_range"]), df["price_range"]
 
-    # preprocess
+    # preprocessing
     X_lda = lda_dim_reduction(X, y, n_comp=args.ncomps)
     X_train, X_test, y_train, y_test = data_splitting(X_lda, y)
 
-    # Parent run untuk keseluruhan eksperimen
-    with mlflow.start_run(run_name="Optuna_Tuning") as parent_run:
-        study = optuna.create_study(direction="maximize")
-        study.optimize(
-            lambda trial: objective(trial, X_train, X_test, y_train, y_test),
-            n_trials=args.ntrials
-        )
+    # Study tanpa parent run (trial langsung jadi run)
+    study = optuna.create_study(direction="maximize")
+    study.optimize(
+        lambda trial: objective(trial, X_train, X_test, y_train, y_test),
+        n_trials=args.ntrials
+    )
 
-        best_trial = study.best_trial
+    # ambil best trial
+    best_trial = study.best_trial
+    print("Best Trial:", best_trial.params)
+
+    # retrain best model
+    best_model = SVC(**best_trial.params, probability=True, random_state=42)
+    best_model.fit(X_train, y_train)
+
+    y_pred_train = best_model.predict(X_train)
+    y_pred_test = best_model.predict(X_test)
+    best_metrics = compute_metrics(X_train, y_train, y_pred_train,
+                                   X_test, y_test, best_model)
+
+    # simpan best run terpisah
+    with mlflow.start_run(run_name="Best_Model"):
         mlflow.log_params(best_trial.params)
-
-        # retrain best model
-        best_model = SVC(**best_trial.params, probability=True, random_state=42)
-        best_model.fit(X_train, y_train)
-
-        y_pred_train = best_model.predict(X_train)
-        y_pred_test = best_model.predict(X_test)
-        best_metrics = compute_metrics(X_train, y_train, y_pred_train,
-                                       X_test, y_test, best_model)
-
         mlflow.log_metrics({"best_" + k: v for k, v in best_metrics.items()})
 
-        print("Best Trial:", best_trial.params)
-        print("Best Metrics:", best_metrics)
+    print("Best Metrics:", best_metrics)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
