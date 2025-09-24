@@ -44,19 +44,26 @@ jobs:
       # 5. Run MLProject
       - name: Run MLProject
         run: |
-          mlflow run MLProject --env-manager=local \
+          mlflow run MLProject --env-manager=conda \
             -P dataset=$CSV_URL \
             -P ncomps=$N_COMPS \
             -P ntrials=$N_TRIALS
 
-      # 6. Get latest MLFlow run_id
+      # 6. Upload artifacts
+      - name: Upload MLflow results
+        uses: actions/upload-artifact@v3
+        with:
+          name: mlflow-artifacts
+          path: mlruns/
+
+      # 7. Get latest MLFlow run_id
       - name: Get latest MLFlow run_id
         run: |
           RUN_ID=$(ls -td mlruns/0/*/ | head -n 1 | cut -d'/' -f3)
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
           echo "Latest run_id: $RUN_ID"
       
-      # 7. Setup GitHub auth for push
+      # 8. Setup GitHub auth for push
       - name: Setup GitHub auth
         run: |
           git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}
