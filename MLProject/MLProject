@@ -7,5 +7,4 @@ entry_points:
     parameters:
       dataset: {type: str, default: "cleaned_data.csv"}
       ncomps: {type: int, default: 3}
-      ntrials: {type: int, default: 30}
-    command: "python modelling.py --dataset {dataset} --ncomps {ncomps} --ntrials {ntrials}"
+    command: "python modelling.py --dataset {dataset} --ncomps {ncomps}"
