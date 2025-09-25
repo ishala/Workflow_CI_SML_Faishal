@@ -5,7 +5,6 @@ import warnings
 import numpy as np
 import pandas as pd
 import argparse
-import optuna
 from dotenv import load_dotenv
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
@@ -18,7 +17,7 @@ from sklearn.metrics import (
 # load env
 load_dotenv()
 
-# MLflow setup (local server)
+# MLflow setup (DagsHub)
 mlflow.set_tracking_uri("https://dagshub.com/ishala/SML_Membangun_Model.mlflow")
 mlflow.set_experiment("Mobile Price Range Prediction")
 
@@ -58,30 +57,6 @@ def compute_metrics(X_train, y_train, y_pred_train,
     }
 
 
-def objective(trial, X_train, X_test, y_train, y_test):
-    """Optuna objective, tapi pakai run terpisah per trial"""
-    C = trial.suggest_loguniform("C", 1e-2, 1e2)
-    gamma = trial.suggest_loguniform("gamma", 1e-3, 1e1)
-    kernel = trial.suggest_categorical("kernel", ["rbf", "linear", "poly", "sigmoid"])
-
-    model = SVC(C=C, gamma=gamma, kernel=kernel, probability=True, random_state=42)
-    model.fit(X_train, y_train)
-
-    y_pred_train = model.predict(X_train)
-    y_pred_test = model.predict(X_test)
-
-    metrics = compute_metrics(X_train, y_train, y_pred_train,
-                              X_test, y_test, y_pred_test, model)
-
-    # mirip kode referensi: langsung bikin run baru per kombinasi
-    run_name = f"trial_C{C:.3f}_gamma{gamma:.3f}_kernel{kernel}"
-    with mlflow.start_run(run_name=run_name):
-        mlflow.log_params({"C": C, "gamma": gamma, "kernel": kernel})
-        mlflow.log_metrics(metrics)
-
-    return metrics["val_accuracy"]
-
-
 def main(args):
     # load dataset
     df = pd.read_csv(args.dataset)
@@ -91,37 +66,62 @@ def main(args):
     X_lda = lda_dim_reduction(X, y, n_comp=args.ncomps)
     X_train, X_test, y_train, y_test = data_splitting(X_lda, y)
 
-    # Study tanpa parent run (trial langsung jadi run)
-    study = optuna.create_study(direction="maximize")
-    study.optimize(
-        lambda trial: objective(trial, X_train, X_test, y_train, y_test),
-        n_trials=args.ntrials
-    )
+    # Random search ranges (contoh: C dan gamma SVM)
+    C_range = np.logspace(-2, 2, 5)         # 0.01 → 100
+    gamma_range = np.logspace(-3, 1, 5)     # 0.001 → 10
+    kernels = ["rbf", "linear", "poly", "sigmoid"]
 
-    # ambil best trial
-    best_trial = study.best_trial
-    print("Best Trial:", best_trial.params)
+    best_accuracy = 0
+    best_params = {}
+    best_metrics = None
+    best_model = None
 
-    # retrain best model
-    best_model = SVC(**best_trial.params, probability=True, random_state=42)
-    best_model.fit(X_train, y_train)
+    for C in C_range:
+        for gamma in gamma_range:
+            for kernel in kernels:
+                run_name = f"random_C{C:.3f}_gamma{gamma:.3f}_kernel{kernel}"
+                with mlflow.start_run(run_name=run_name):
+                    mlflow.log_params({"C": C, "gamma": gamma, "kernel": kernel})
 
-    y_pred_train = best_model.predict(X_train)
-    y_pred_test = best_model.predict(X_test)
-    best_metrics = compute_metrics(X_train, y_train, y_pred_train,
-                                   X_test, y_test, best_model)
+                    # Train
+                    model = SVC(C=C, gamma=gamma, kernel=kernel,
+                                probability=True, random_state=42)
+                    model.fit(X_train, y_train)
 
-    # simpan best run terpisah
-    with mlflow.start_run(run_name="Best_Model"):
-        mlflow.log_params(best_trial.params)
-        mlflow.log_metrics({"best_" + k: v for k, v in best_metrics.items()})
+                    y_pred_train = model.predict(X_train)
+                    y_pred_test = model.predict(X_test)
 
-    print("Best Metrics:", best_metrics)
+                    metrics = compute_metrics(
+                        X_train, y_train, y_pred_train,
+                        X_test, y_test, y_pred_test, model
+                    )
+
+                    mlflow.log_metrics(metrics)
+
+                    # Cek best
+                    if metrics["val_accuracy"] > best_accuracy:
+                        best_accuracy = metrics["val_accuracy"]
+                        best_params = {"C": C, "gamma": gamma, "kernel": kernel}
+                        best_metrics = metrics
+                        best_model = model
+
+    # Save best run
+    if best_model is not None:
+        with mlflow.start_run(run_name="Best_Model"):
+            mlflow.log_params(best_params)
+            mlflow.log_metrics({"best_" + k: v for k, v in best_metrics.items()})
+            mlflow.sklearn.log_model(
+                sk_model=best_model,
+                artifact_path="model"
+            )
+
+        print("Best Params:", best_params)
+        print("Best Metrics:", best_metrics)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, default="cleaned_data.csv")
     parser.add_argument("--ncomps", type=int, default=3)
-    parser.add_argument("--ntrials", type=int, default=30)
     args = parser.parse_args()
     main(args)
