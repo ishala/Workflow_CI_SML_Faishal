@@ -1,6 +1,4 @@
 import mlflow
-import dagshub
-import os
 import warnings
 import numpy as np
 import pandas as pd
@@ -17,13 +15,8 @@ from sklearn.metrics import (
 # load env
 load_dotenv()
 
-# MLflow setup (DagsHub)
-mlflow.set_tracking_uri("https://dagshub.com/ishala/SML_Membangun_Model.mlflow")
-mlflow.set_experiment("Mobile Price Range Prediction")
-
 warnings.filterwarnings("ignore")
 np.random.seed(42)
-
 
 def lda_dim_reduction(X, y, n_comp=3):
     lda = LinearDiscriminantAnalysis(n_components=n_comp)
