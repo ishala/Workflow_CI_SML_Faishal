@@ -1,0 +1,15 @@
+artifact_uri: file:///home/runner/work/Workflow_CI_SML_Faishal/Workflow_CI_SML_Faishal/mlruns/0/d78338d17e2442c4bf6159c1dc1e50dd/artifacts
+end_time: 1758806145502
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: d78338d17e2442c4bf6159c1dc1e50dd
+run_name: random_C100.000_gamma0.100_kernelpoly
+run_uuid: d78338d17e2442c4bf6159c1dc1e50dd
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1758806145429
+status: 3
+tags: []
+user_id: runner

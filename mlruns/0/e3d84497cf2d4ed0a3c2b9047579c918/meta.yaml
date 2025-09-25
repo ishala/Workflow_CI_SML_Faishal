@@ -1,0 +1,15 @@
+artifact_uri: file:///home/runner/work/Workflow_CI_SML_Faishal/Workflow_CI_SML_Faishal/mlruns/0/e3d84497cf2d4ed0a3c2b9047579c918/artifacts
+end_time: 1758806805637
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: e3d84497cf2d4ed0a3c2b9047579c918
+run_name: Best_Model
+run_uuid: e3d84497cf2d4ed0a3c2b9047579c918
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1758806802388
+status: 3
+tags: []
+user_id: runner
