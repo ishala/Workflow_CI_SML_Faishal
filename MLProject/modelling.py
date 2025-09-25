@@ -19,7 +19,7 @@ from sklearn.metrics import (
 load_dotenv()
 
 # MLflow setup (local server)
-mlflow.set_tracking_uri("http://127.0.0.1:5000/")
+mlflow.set_tracking_uri("https://dagshub.com/ishala/SML_Membangun_Model.mlflow")
 mlflow.set_experiment("Mobile Price Range Prediction")
 
 warnings.filterwarnings("ignore")
