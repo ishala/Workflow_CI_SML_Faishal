@@ -40,7 +40,6 @@ jobs:
           mlflow run MLProject/ --env-manager=local \
             -P dataset=$CSV_URL \
             -P ncomps=$N_COMPS \
-            -P ntrials=$N_TRIALS
 
       # 5. Upload artifacts (mlruns)
       - name: Upload MLflow results
